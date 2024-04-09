@@ -13,15 +13,15 @@ type FakeListener struct {
 	closed   chan struct{}
 }
 
-func (fl *FakeListener) Listen(network, address string) (net.Listener, error) {
-	return fl, nil
-}
-
 func NewFakeListener() *FakeListener {
 	return &FakeListener{
 		connChan: make(chan net.Conn),
 		closed:   make(chan struct{}),
 	}
+}
+
+func (fl *FakeListener) Listen(network, address string) (net.Listener, error) {
+	return fl, nil
 }
 
 func (fl *FakeListener) Accept() (net.Conn, error) {
@@ -53,7 +53,8 @@ type FakeConn struct {
 }
 
 func (fc *FakeConn) Read(b []byte) (n int, err error) {
-	return 0, nil
+	copy(b, fc.readData)
+	return len(fc.readData), nil
 }
 
 func (fc *FakeConn) Write(b []byte) (n int, err error) {
@@ -70,7 +71,13 @@ func (fc *FakeConn) Close() error {
 func TestMyTCPServer(t *testing.T) {
 	fl := NewFakeListener()
 	writeData := make(chan []byte)
-	fakeConn := &FakeConn{writeData: writeData}
+	readData := make([]byte, 1024)
+	copy(readData, "GET / HTTP/1.1\r\n\r\n")
+
+	fakeConn := &FakeConn{
+		writeData: writeData,
+		readData:  readData,
+	}
 
 	go fl.QueueConn(fakeConn)
 
@@ -86,7 +93,7 @@ func TestMyTCPServer(t *testing.T) {
 				t.Fatalf("Unexpected response from server: %s", string(buf))
 			}
 			return
-		case <-time.After(3 * time.Second):
+		case <-time.After(1 * time.Second):
 			t.Fatal("Timed out waiting for data")
 		}
 	}

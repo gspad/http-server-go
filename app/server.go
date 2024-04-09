@@ -49,7 +49,16 @@ func StartServer(ctx context.Context, listener NetworkListener, port string) err
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	buf := make([]byte, 1024)
+	conn.Read(buf)
+
+	data := buf[:5]
+
+	if string(data) == "GET /" {
+		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	} else {
+		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+	}
 }
 
 type RealListener struct{}
