@@ -52,9 +52,9 @@ func handleConnection(conn net.Conn) {
 	buf := make([]byte, 1024)
 	conn.Read(buf)
 
-	data := buf[:5]
+	data := buf[:6]
 
-	if string(data) == "GET /" {
+	if string(data) == "GET / " {
 		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 	} else {
 		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
