@@ -7,7 +7,15 @@ import (
 	"net"
 	"os"
 	"strings"
-	"time"
+)
+
+const (
+	PROTOCOL                = "HTTP/1.1 "
+	HTTP_STATUS_OK          = "200 OK"
+	HTTP_STATUS_BAD_REQUEST = "400 Bad Request"
+	HTTP_STATUS_NOT_FOUND   = "404 Not Found"
+	CONTENT_TYPE            = "Content-Type: text/plain"
+	CONTENT_LENGTH          = "Content-Length: "
 )
 
 func main() {
@@ -53,62 +61,47 @@ func StartServer(ctx context.Context, listener NetworkListener, port string) err
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 	dataBuffer := make([]byte, 0, 4096)
-	buf := make([]byte, 1024)
+	buf := make([]byte, 4096)
 
-	for {
-		// Set a timeout for reading from the connection
-		timeoutDuration := 2 * time.Minute
-		err := conn.SetReadDeadline(time.Now().Add(timeoutDuration))
-		if err != nil {
-			fmt.Println("Error setting deadline:", err)
-			break
+	n, err := conn.Read(buf)
+	if err != nil {
+		if err != io.EOF {
+			fmt.Println("Error reading:", err)
+			return
 		}
-
-		n, err := conn.Read(buf)
-		if err != nil {
-			if err != io.EOF {
-				fmt.Println("Error reading:", err)
-			}
-			break
-		}
-
-		dataBuffer := append(dataBuffer, buf[:n]...)
-
-		if !strings.Contains(string(dataBuffer), "\r\n\r\n") {
-			continue
-		}
-
-		handleHttpRequest(conn, dataBuffer)
-		dataBuffer = dataBuffer[:0]
 	}
+
+	dataBuffer = append(dataBuffer, buf[:n]...)
+
+	handleHttpRequest(conn, dataBuffer)
 }
 
 func handleHttpRequest(conn net.Conn, data []byte) {
 	dataString := string(data)
 	path := strings.Split(dataString, " ")
+
 	if len(path) < 2 {
-		conn.Write([]byte("HTTP/1.1 400 Bad Request\r\n\r\n"))
+		conn.Write([]byte(PROTOCOL + HTTP_STATUS_BAD_REQUEST + "\r\n\r\n"))
 		return
 	}
 	switch path[0] {
 	case "GET":
 		handleGetRequest(conn, path[1])
 	default:
-		conn.Write([]byte("HTTP/1.1 405 Method Not Allowed\r\n\r\n"))
+		conn.Write([]byte(PROTOCOL + HTTP_STATUS_NOT_FOUND + "\r\n\r\n"))
 	}
 }
 
 func handleGetRequest(conn net.Conn, path string) {
-	if path == `/` {
-		conn.Write([]byte(`HTTP/1.1 200 OK\r\n\r\n`))
-		println("GETS HERE")
-	} else if len(path) > 1 {
-		content := path[1:]
+	if path == "/" {
+		conn.Write([]byte(PROTOCOL + HTTP_STATUS_OK + "\r\n\r\n"))
+	} else if len(path) > 1 && strings.HasPrefix(path, "/echo/") {
+		content := strings.TrimPrefix(path, "/echo/")
 		response := fmt.Sprintf(
-			`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s`, len(content), content)
+			PROTOCOL+HTTP_STATUS_OK+"\r\n"+CONTENT_TYPE+"\r\n"+CONTENT_LENGTH+"%d\r\n\r\n%s", len(content), content)
 		conn.Write([]byte(response))
 	} else {
-		conn.Write([]byte(`HTTP/1.1 404 Not Found\r\n\r\n`))
+		conn.Write([]byte(PROTOCOL + HTTP_STATUS_NOT_FOUND + "\r\n\r\n"))
 	}
 }
 

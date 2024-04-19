@@ -99,9 +99,9 @@ func TestMyTCPServer(t *testing.T) {
 	for {
 		select {
 		case buf := <-writeData:
-			println(`Received test data:`, string(buf))
+			println("Received test data:", string(buf))
 
-			if string(buf) == `HTTP/1.1 200 OK\r\n\r\n` {
+			if string(buf) == "HTTP/1.1 200 OK\r\n\r\n" {
 				return
 			} else {
 				t.Fatalf("Unexpected response from server: %s", string(buf))
@@ -116,7 +116,7 @@ func TestTCPBodyResponse(t *testing.T) {
 	fl := NewFakeListener()
 	writeData := make(chan []byte)
 	readData := make([]byte, 1024)
-	copy(readData, "GET /echo/scooby/scooby-Horsey HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n\r\n")
+	copy(readData, "GET /echo/yikes/dooby-Coo HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n\r\n")
 
 	fakeConn := &FakeConn{
 		writeData: writeData,
@@ -133,10 +133,10 @@ func TestTCPBodyResponse(t *testing.T) {
 	for {
 		select {
 		case buf := <-writeData:
-			if string(buf) == `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 25\r\n\r\necho/scooby/scooby-Horsey` {
+			if string(buf) == "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 15\r\n\r\nyikes/dooby-Coo" {
 				return
 			} else {
-				t.Fatalf("Unexpected response from server: %s", string(buf))
+				t.Fatalf("Unexpected response from server: %q", string(buf))
 				return
 			}
 		case <-time.After(1 * time.Second):
