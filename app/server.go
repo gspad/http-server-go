@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -50,14 +51,32 @@ func StartServer(ctx context.Context, listener NetworkListener, port string) err
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 	buf := make([]byte, 1024)
-	conn.Read(buf)
+	n, err := conn.Read(buf)
 
-	data := buf[:6]
+	if err != nil {
+		fmt.Println("Error reading:", err)
+	}
 
-	if string(data) == "GET / " {
-		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-	} else {
-		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+	data := string(buf[:n])
+	println("Received data:", data)
+
+	path := strings.Split(data, " ")
+
+	if path[0] == "GET" {
+		if path[1] == "/" {
+			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+		} else if path[1] == "/echo/abc" {
+			content := strings.Split(path[1], "/")
+
+			response := fmt.Sprintf(
+				`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s`, len(content[2]), content[2])
+
+			fmt.Printf("Production response: %q\n", response)
+
+			conn.Write([]byte(response))
+		} else {
+			conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		}
 	}
 }
 

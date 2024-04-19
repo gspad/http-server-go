@@ -98,3 +98,34 @@ func TestMyTCPServer(t *testing.T) {
 		}
 	}
 }
+
+func TestTCPBodyResponse(t *testing.T) {
+	fl := NewFakeListener()
+	writeData := make(chan []byte)
+	readData := make([]byte, 1024)
+	copy(readData, "GET /echo/abc HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n\r\n")
+
+	fakeConn := &FakeConn{
+		writeData: writeData,
+		readData:  readData,
+	}
+
+	go fl.QueueConn(fakeConn)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go StartServer(ctx, fl, "4221")
+
+	for {
+		select {
+		case buf := <-writeData:
+			if string(buf) != `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\nabc` {
+				t.Fatalf("Unexpected response from server: %s", string(buf))
+			}
+			return
+		case <-time.After(1 * time.Second):
+			t.Fatal("Timed out waiting for data")
+		}
+	}
+}
