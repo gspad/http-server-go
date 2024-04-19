@@ -65,6 +65,7 @@ func handleConnection(conn net.Conn) {
 	if path[0] == `GET` {
 		if path[1] == `/` {
 			conn.Write([]byte(`HTTP/1.1 200 OK\r\n\r\n`))
+			println("GETS HERE")
 		} else if len(path[1]) > 1 {
 			content := path[1][1:]
 
