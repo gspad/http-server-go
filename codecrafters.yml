@@ -9,3 +9,4 @@ debug: false
 #
 # Available versions: go-1.21
 language_pack: go-1.21
+debug: true

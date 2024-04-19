@@ -120,13 +120,7 @@ func TestTCPBodyResponse(t *testing.T) {
 	for {
 		select {
 		case buf := <-writeData:
-			bufstr := string(buf)
-			str1 := `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 20\r\n\r\nscooby/scooby-Horsey`
-
-			println(str1)
-			println(bufstr)
-
-			if string(buf) != `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 20\r\n\r\nscooby/scooby-Horsey` {
+			if string(buf) != `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 25\r\n\r\necho/scooby/scooby-Horsey` {
 				t.Fatalf(`Unexpected response from server: %s`, string(buf))
 			}
 			return

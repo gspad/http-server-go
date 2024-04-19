@@ -64,9 +64,9 @@ func handleConnection(conn net.Conn) {
 
 	if path[0] == "GET" {
 		if path[1] == "/" {
-			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-		} else if strings.HasPrefix(path[1], `/echo/`) {
-			content := strings.TrimPrefix(path[1], `/echo/`)
+			conn.Write([]byte(`HTTP/1.1 200 OK\r\n\r\n`))
+		} else if len(path[1]) > 1 {
+			content := path[1][1:]
 
 			response := fmt.Sprintf(
 				`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s`, len(content), content)
