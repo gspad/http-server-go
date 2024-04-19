@@ -120,12 +120,13 @@ func TestTCPBodyResponse(t *testing.T) {
 	for {
 		select {
 		case buf := <-writeData:
-			str1 := fmt.Sprintf(`Expected: HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 20 \r\n\r\nscooby/scooby-Horsey`)
-			str2 := fmt.Sprintf(`Received: %s`, string(buf))
+			bufstr := string(buf)
+			str1 := `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 20\r\n\r\nscooby/scooby-Horsey`
 
-			print("they're equals: ", str1 == str2)
+			println(str1)
+			println(bufstr)
 
-			if string(buf) != `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 20 \r\n\r\nscooby/scooby-Horsey` {
+			if string(buf) != `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 20\r\n\r\nscooby/scooby-Horsey` {
 				t.Fatalf(`Unexpected response from server: %s`, string(buf))
 			}
 			return
