@@ -103,7 +103,7 @@ func TestTCPBodyResponse(t *testing.T) {
 	fl := NewFakeListener()
 	writeData := make(chan []byte)
 	readData := make([]byte, 1024)
-	copy(readData, "GET /echo/abc HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n\r\n")
+	copy(readData, "GET /echo/scooby/scooby-Horsey HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n\r\n")
 
 	fakeConn := &FakeConn{
 		writeData: writeData,
@@ -120,8 +120,13 @@ func TestTCPBodyResponse(t *testing.T) {
 	for {
 		select {
 		case buf := <-writeData:
-			if string(buf) != `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\nabc` {
-				t.Fatalf("Unexpected response from server: %s", string(buf))
+			str1 := fmt.Sprintf(`Expected: HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 20 \r\n\r\nscooby/scooby-Horsey`)
+			str2 := fmt.Sprintf(`Received: %s`, string(buf))
+
+			print("they're equals: ", str1 == str2)
+
+			if string(buf) != `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 20 \r\n\r\nscooby/scooby-Horsey` {
+				t.Fatalf(`Unexpected response from server: %s`, string(buf))
 			}
 			return
 		case <-time.After(1 * time.Second):

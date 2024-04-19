@@ -65,17 +65,15 @@ func handleConnection(conn net.Conn) {
 	if path[0] == "GET" {
 		if path[1] == "/" {
 			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-		} else if path[1] == "/echo/abc" {
-			content := strings.Split(path[1], "/")
+		} else if strings.HasPrefix(path[1], `/echo/`) {
+			content := strings.TrimPrefix(path[1], `/echo/`)
 
 			response := fmt.Sprintf(
-				`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s`, len(content[2]), content[2])
-
-			fmt.Printf("Production response: %q\n", response)
+				`HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s`, len(content), content)
 
 			conn.Write([]byte(response))
 		} else {
-			conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+			conn.Write([]byte(`HTTP/1.1 404 Not Found\r\n\r\n`))
 		}
 	}
 }
