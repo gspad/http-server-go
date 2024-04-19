@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"testing"
 	"time"
@@ -53,8 +54,17 @@ type FakeConn struct {
 }
 
 func (fc *FakeConn) Read(b []byte) (n int, err error) {
-	copy(b, fc.readData)
-	return len(fc.readData), nil
+	if len(fc.readData) == 0 {
+		return 0, io.EOF
+	}
+
+	n = copy(b, fc.readData)
+	fc.readData = fc.readData[n:]
+	return n, nil
+}
+
+func (fc *FakeConn) SetReadDeadline(t time.Time) error {
+	return nil
 }
 
 func (fc *FakeConn) Write(b []byte) (n int, err error) {
@@ -89,10 +99,13 @@ func TestMyTCPServer(t *testing.T) {
 	for {
 		select {
 		case buf := <-writeData:
-			if string(buf) != "HTTP/1.1 200 OK\r\n\r\n" {
+			println(`Received test data:`, string(buf))
+
+			if string(buf) == `HTTP/1.1 200 OK\r\n\r\n` {
+				return
+			} else {
 				t.Fatalf("Unexpected response from server: %s", string(buf))
 			}
-			return
 		case <-time.After(1 * time.Second):
 			t.Fatal("Timed out waiting for data")
 		}
@@ -120,10 +133,12 @@ func TestTCPBodyResponse(t *testing.T) {
 	for {
 		select {
 		case buf := <-writeData:
-			if string(buf) != `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 25\r\n\r\necho/scooby/scooby-Horsey` {
-				t.Fatalf(`Unexpected response from server: %s`, string(buf))
+			if string(buf) == `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 25\r\n\r\necho/scooby/scooby-Horsey` {
+				return
+			} else {
+				t.Fatalf("Unexpected response from server: %s", string(buf))
+				return
 			}
-			return
 		case <-time.After(1 * time.Second):
 			t.Fatal("Timed out waiting for data")
 		}
