@@ -30,7 +30,7 @@ func (fl *FakeListener) Accept() (net.Conn, error) {
 	case conn := <-fl.connChan:
 		return conn, nil
 	case <-fl.closed:
-		return nil, fmt.Errorf("listener closed")
+		return nil, fmt.Errorf("Listener closed")
 	}
 }
 

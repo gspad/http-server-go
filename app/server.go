@@ -84,6 +84,11 @@ func handleHttpRequest(conn net.Conn, data []byte) {
 		conn.Write([]byte(PROTOCOL + HTTP_STATUS_BAD_REQUEST + "\r\n\r\n"))
 		return
 	}
+
+	handleMethod(conn, method, lines)
+}
+
+func handleMethod(conn net.Conn, method string, lines []string) {
 	switch method {
 	case "GET":
 		handleGetRequest(conn, lines)
@@ -98,26 +103,34 @@ func handleGetRequest(conn net.Conn, headerLines []string) {
 	if path == "/" {
 		conn.Write([]byte(PROTOCOL + HTTP_STATUS_OK + "\r\n\r\n"))
 	} else if strings.HasPrefix(path, "/echo/") {
-		content := strings.TrimPrefix(path, "/echo/")
-		response := fmt.Sprintf(
-			PROTOCOL+HTTP_STATUS_OK+"\r\n"+CONTENT_TYPE+"\r\n"+CONTENT_LENGTH+"%d\r\n\r\n%s", len(content), content)
-		conn.Write([]byte(response))
+		writeEcho(conn, path)
 	} else if path == "/user-agent" {
-		userAgentValue := ""
-
-		for _, line := range headerLines {
-			header := strings.Split(line, ":")
-			if header[0] == "User-Agent" {
-				userAgentValue = strings.TrimSpace(header[1])
-				break
-			}
-		}
-
-		response := fmt.Sprintf(PROTOCOL+HTTP_STATUS_OK+"\r\n"+CONTENT_TYPE+"\r\n"+CONTENT_LENGTH+"%d\r\n\r\n%s", len(userAgentValue), userAgentValue)
-		conn.Write([]byte(response))
+		writeUserAgent(conn, headerLines)
 	} else {
 		conn.Write([]byte(PROTOCOL + HTTP_STATUS_NOT_FOUND + "\r\n\r\n"))
 	}
+}
+
+func writeEcho(conn net.Conn, path string) {
+	content := strings.TrimPrefix(path, "/echo/")
+	response := fmt.Sprintf(
+		PROTOCOL+HTTP_STATUS_OK+"\r\n"+CONTENT_TYPE+"\r\n"+CONTENT_LENGTH+"%d\r\n\r\n%s", len(content), content)
+	conn.Write([]byte(response))
+}
+
+func writeUserAgent(conn net.Conn, headerLines []string) {
+	userAgentValue := ""
+
+	for _, line := range headerLines {
+		header := strings.Split(line, ":")
+		if header[0] == "User-Agent" {
+			userAgentValue = strings.TrimSpace(header[1])
+			break
+		}
+	}
+
+	response := fmt.Sprintf(PROTOCOL+HTTP_STATUS_OK+"\r\n"+CONTENT_TYPE+"\r\n"+CONTENT_LENGTH+"%d\r\n\r\n%s", len(userAgentValue), userAgentValue)
+	conn.Write([]byte(response))
 }
 
 type RealListener struct{}
